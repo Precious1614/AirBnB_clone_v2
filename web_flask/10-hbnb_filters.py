@@ -8,11 +8,14 @@ from models import storage
 app = Flask(__name__)
 
 
-@app.route('/states_list', strict_slashes=False)
-def states_list():
-    '''Returns a template with all the states in storage'''
-    states = storage.all("State").values()
-    return render_template('7-states_list.html', states=states)
+@app.route('/hbnb_filters', strict_slashes=False)
+def hbnb_filters():
+    '''Returns a template for hbnb filters'''
+    states = storage.all('State').values()
+    amenities = storage.all('Amenity').values()
+
+    return render_template('10-hbnb_filters.html', states=states,
+                           amenities=amenities)
 
 
 @app.teardown_appcontext

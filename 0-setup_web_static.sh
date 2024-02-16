@@ -1,41 +1,54 @@
 #!/usr/bin/env bash
-# This scripts sets up my web servers for the deployment of web_static
+# A script that sets up your web servers for the deployment of web_static.
 
-sudo apt-get -y update
-sudo apt-get -y install nginx
+# Check if nginx already exists before trying to install afresh
+if [[ ! -x /usr/sbin/nginx ]];
+then
+    sudo apt-get -y update
+    sudo apt-get install -y nginx
+fi
 
-sudo mkdir -p /data/
-sudo mkdir -p /data/web_static/
-sudo mkdir -p /data/web_static/releases/
-sudo mkdir -p /data/web_static/shared/
-sudo mkdir -p /data/web_static/releases/test/
-echo '<html>
+# Make the necessary directories if they don't already exist
+if [[ ! -d "/data/web_static/releases/test/" ]];
+then
+    mkdir -p /data/web_static/releases/test/
+fi
+
+if [[ ! -d "/data/web_static/shared/" ]];
+then
+    mkdir -p /data/web_static/shared/
+fi
+
+# Make fake html file
+echo "
+<html>
   <head>
   </head>
   <body>
     Holberton School
   </body>
-</html>' | sudo tee /data/web_static/releases/test/index.html
-sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
-sudo chown -R ubuntu /data/
-sudo chgrp -R ubuntu /data/
-echo "server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    add_header X-Served-By $HOSTNAME;
-    root   /var/www/html;
-    index  index.html index.htm;
-    location /hbnb_static {
-        alias /data/web_static/current;
-        index index.html index.htm;
-    }
-    location /redirect_me {
-        return 301 http://google.com/;
-    }
-    error_page 404 /404.html;
-    location /404 {
-      root /var/www/html;
-      internal;
-    }
-}" | sudo tee /etc/nginx/sites-available/default
+</html>
+" > /data/web_static/releases/test/index.html
+
+# Create a symbolic link each time
+ln -nsf /data/web_static/releases/test/ /data/web_static/current 
+
+# Give ownership of the /data/ folder to the ubuntu user AND group
+sudo chown -R ubuntu:ubuntu /data/
+
+# Update the Nginx configuration to serve the content of /data/web_static/current/ to hbnb_static
+echo "
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        location /hbnb_static {
+            alias /data/web_static/current/;
+        }
+
+        add_header X-Served-By $HOSTNAME;
+
+}" > /etc/nginx/sites-available/default
+
+# Restart nginx
 sudo service nginx restart
